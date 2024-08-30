@@ -1,6 +1,6 @@
 variable "iam_role_name" {
   description = "The name of the role to create in the customer AWS environment."
-  type = string
+  type        = string
 }
 
 variable "external_id" {
@@ -10,7 +10,7 @@ variable "external_id" {
 
 variable "stitcher_ai_aws_account_id" {
   description = "The StitcherAI AWS account id. (Provided by StitcherAI)"
-  type    = string
+  type        = string
 }
 
 variable "environment_id" {
