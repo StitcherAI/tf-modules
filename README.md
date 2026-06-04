@@ -29,7 +29,7 @@ Your StitcherAI environment ID is required for most setups. You can find it at [
 |---|---|---|
 | Snowflake | [`snowflake/`](./snowflake/) | SQL scripts for cost read access and optional write access for StitcherAI datasets |
 | Confluent Cloud | [`confluent_cloud/`](./confluent_cloud/) | API key setup for cost and usage data access |
-| Elastic Cloud | [`elstic_cloud/`](./elstic_cloud/) | API key setup for cost and usage data access |
+| Elastic Cloud | [`elastic_cloud/`](./elastic_cloud/) | API key setup for cost and usage data access |
 | MongoDB Atlas | [`mongodb_atlas/`](./mongodb_atlas/) | Admin API key setup for cost and usage data access |
 | Twilio | [`twilio/`](./twilio/) | Standard API key setup for cost and usage data access |
 | OpenAI | [`openai/`](./openai/) | Read-only Admin Key setup for cost and usage data access |
