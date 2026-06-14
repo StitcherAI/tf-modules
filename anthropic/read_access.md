@@ -91,7 +91,42 @@ to obtain it and for help wiring it into your environment. At a high level:
 2. Grant StitcherAI read access to that bucket path.
 3. On the [Data Sources](https://app.stitcher.ai/connections/datasources) page,
    add a new source for **Anthropic cost data** using the file-based (S3 or GCS)
-   connector, set the bucket and path, and validate the connection.
+   connector and fill in the connection (see the values to enter below), then
+   validate the connection.
+
+#### Connection inputs
+
+Set these when creating the file-based source. The reference agent prints the
+exact values to use for your bucket after a run.
+
+On the **connector** (where the files live):
+
+- **Bucket** — the S3/GCS bucket you staged to.
+- **Path** — the prefix within the bucket the agent wrote under.
+
+On the **dataset** (all file paths are **relative to the connector bucket/path**
+and are looked up under the date folder):
+
+- **Organization ID** *(required)* — your Anthropic organization id. Optionally
+  also **Organization Name**.
+- **Format** *(required)* — `CSV` or `Parquet` (match what the agent staged).
+- **Date path format** *(required)* — the dated-folder pattern the agent stages
+  under. **Default `year=yyyy/month=MM`** (e.g. `…/year=2026/month=01/…`); other
+  patterns such as `yyyyMM` and `yyyy/MM` are supported. This must match the
+  folders the files are actually staged under, or the connection validates but
+  reads nothing.
+- **File paths** — the file name within the date folder for each dataset.
+  Defaults written by the agent:
+
+  | Dataset | Default file name | Required |
+  |---------|-------------------|----------|
+  | Cost report file path | `cost_dataset.csv` | **Yes** |
+  | Usage report file path | `usage_dataset.csv` | No (else cost is not split per API key) |
+  | Workspace list file path | `workspace_list.csv` | No (else workspaces appear by ID only) |
+  | API key list file path | `api_key_list.csv` | No (else API keys appear by ID only) |
+
+  A glob is allowed for data staged as multiple files, e.g.
+  `year=*/month=*/day=*/cost*.parquet`.
 
 ---
 
