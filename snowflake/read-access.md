@@ -8,6 +8,15 @@ To retrieve cost data from Snowflake, StitcherAI needs access to the cost and us
 
 **Note**: Rather than requesting access to the `SNOWFLAKE.ORGANIZATION_USAGE` schema directly, the StitcherAI setup process creates a separate database and schema specifically for StitcherAI. This provides a clear separation of what StitcherAI can access.
 
+### Authentication
+
+StitcherAI connects to Snowflake using one of two mechanisms — pick whichever fits your security policy. The same choice applies to all Snowflake connections (cost data, business datasets, and [destinations](./write-access.md)):
+
+- **Programmatic access token (PAT)** — the Snowflake username plus a PAT. Created in Step 3, **Option A** below.
+- **Key pair** — the Snowflake username plus an RSA private key, with the matching public key registered on the Snowflake user. This is Snowflake's recommended method for service accounts. Created in Step 3, **Option B** below.
+
+You select the mechanism in the StitcherAI UI when creating the data source (the **Authentication method** field) and provide the matching credential — the PAT (as the password) or the private key. Run only one of the two options in the script.
+
 ### Setup Script
 
 The following SQL script guides you through the process of granting access to the cost and usage related tables so that StitcherAI can build the cost datasets for Snowflake.
@@ -25,22 +34,23 @@ Optionally, update the following items if you want to use values different from 
 
 **The script performs the following actions**:
 
-1. Sets up the user, role, database, etc. and creates a PAT (personal access token) for authentication.
+1. Sets up the user, role, database, etc. and configures authentication (a PAT or a key pair).
 2. Sets up the GCS integration.
 3. Replicates a limited set of cost and usage views into the StitcherAI-specific database and schema.
 4. Grants the user and role created in Step 1 read-only access to those views.
 
 **Important**: Record the following data so the StitcherAI data source can be created in the StitcherAI web UI:
 
-- Step 1 values for required keys:
-  - Snowflake username and token (PAT)
+- Authentication credentials — depending on the option you ran in Step 3:
+  - **PAT (Option A)**: the Snowflake username and the token (PAT)
+  - **Key pair (Option B)**: the Snowflake username and the RSA **private** key (plus its passphrase, only if you created an encrypted key)
 - Step 1 values for optional keys (only needed if the default values are not used):
   - Database name (`database_for_reads`)
   - Schema name (`schema_for_reads`)
   - Read role (`stitcherai_reader_role`)
   - Warehouse name (`stitcherai_warehouse`)
   - GCS integration name (`gcs_integration_name`)
-- Step 6 output for key `STORAGE_GCP_SERVICE_ACCOUNT`
+- Step 7 output for key `STORAGE_GCP_SERVICE_ACCOUNT`
 
 ```sql
 -- SQL script for setting up Snowflake cost read access for StitcherAI
@@ -66,8 +76,8 @@ set fq_schema = concat($database_for_reads, '.', $schema_for_reads);
 use role accountadmin;
 
 ---------------------------------------------------------------------------------------------------
--- Step 2: Basic setup
--- Create users, token, roles, database/schema, etc.
+-- Step 2: Create supporting objects
+-- Create the role, warehouse, and database/schema that the StitcherAI user will use.
 ---------------------------------------------------------------------------------------------------
 
 create warehouse if not exists IDENTIFIER($stitcherai_warehouse)
@@ -82,13 +92,24 @@ grant all on warehouse IDENTIFIER($stitcherai_warehouse) to role IDENTIFIER($sti
 create database if not exists IDENTIFIER($database_for_reads);
 create schema if not exists IDENTIFIER($fq_schema);
 
+---------------------------------------------------------------------------------------------------
+-- Step 3: Create the StitcherAI user (principal) and configure authentication
+-- Create the service user and set up ONE authentication method (Option A or Option B below).
+-- Every step after this one grants the user access and is identical regardless of the method
+-- you choose here.
+---------------------------------------------------------------------------------------------------
+
 CREATE USER IDENTIFIER($stitcherai_user)
     DEFAULT_WAREHOUSE=$stitcherai_warehouse
     DEFAULT_ROLE=$stitcherai_reader_role;
-  
+
 grant role IDENTIFIER($stitcherai_reader_role) to user IDENTIFIER($stitcherai_user);
 
--- **** IMPORTANT **** --
+-- **** AUTHENTICATION: run EITHER Option A (PAT) OR Option B (key pair), not both ****
+
+-- =================================================================================================
+-- Option A: Programmatic access token (PAT)
+-- =================================================================================================
 -- Update as needed to meet your organization's security policies. The authentication policy below has default values.
 -- Use this default network policy if your organization doesn't have a default policy it applies to accounts.
 -- If IP restrictions are necessary, please notify your StitcherAI contact so we can provide the subnets StitcherAI
@@ -110,8 +131,22 @@ ALTER USER IDENTIFIER($stitcherai_user) SET AUTHENTICATION POLICY stitcher_authe
 ALTER USER IF EXISTS IDENTIFIER($stitcherai_user) ADD PROGRAMMATIC ACCESS TOKEN stitcher_pat 
   DAYS_TO_EXPIRY = 365;
 
+-- =================================================================================================
+-- Option B: Key-pair authentication (use INSTEAD of Option A)
+-- =================================================================================================
+-- 1. Generate an UNENCRYPTED RSA key pair locally. An empty passphrase still produces an *encrypted*
+--    key that will fail to load, so use -nocrypt:
+--      openssl genrsa 2048 | openssl pkcs8 -topk8 -nocrypt -out stitcher_rsa_key.p8
+--      openssl rsa -in stitcher_rsa_key.p8 -pubout -out stitcher_rsa_key.pub
+--    (To use an encrypted key instead, omit -nocrypt and supply the passphrase in the StitcherAI UI.)
+-- 2. Register the PUBLIC key on the user. Paste the key body only -- drop the
+--    "-----BEGIN/END PUBLIC KEY-----" lines and any line breaks:
+ALTER USER IDENTIFIER($stitcherai_user) SET RSA_PUBLIC_KEY='<public key body, no header/footer>';
+-- 3. Keep the PRIVATE key file (stitcher_rsa_key.p8). You'll paste its contents into the StitcherAI UI
+--    (Authentication method = Key pair), where it is stored in the secure vault.
+
 ---------------------------------------------------------------------------------------------------
--- Step 3: Setup GCS integration
+-- Step 4: Setup GCS integration
 -- Setup the Google Cloud Storage integration for StitcherAI to export the dataset
 ---------------------------------------------------------------------------------------------------
 
@@ -126,7 +161,7 @@ create storage integration if not exists IDENTIFIER($gcs_integration_name)
   ;
 
 ---------------------------------------------------------------------------------------------------
--- Step 4: Create views in the source database/schema
+-- Step 5: Create views in the source database/schema
 --
 -- Create a set of views based on existing system views in a StitcherAI-specific database and
 -- schema to manage access without exposing non-cost related system tables.
@@ -190,7 +225,7 @@ as select SERVICE_TYPE, ORGANIZATION_NAME, ACCOUNT_NAME, USAGE_DATE, AVERAGE_BYT
 
 
 ---------------------------------------------------------------------------------------------------
--- Step 5: Grant access to the user & role created above
+-- Step 6: Grant access to the user & role created above
 -- Grant read access to the tables and views in the schema created above
 ---------------------------------------------------------------------------------------------------
 grant usage on integration IDENTIFIER($gcs_integration_name) to role IDENTIFIER($stitcherai_reader_role);
@@ -203,7 +238,7 @@ grant select on future tables in schema IDENTIFIER($fq_schema) to role IDENTIFIE
 
 
 ---------------------------------------------------------------------------------------------------
--- Step 6: -- **** IMPORTANT **** --
+-- Step 7: -- **** IMPORTANT **** --
 -- Record the value of the 'STORAGE_GCP_SERVICE_ACCOUNT' key from the result of the command below
 ---------------------------------------------------------------------------------------------------
 DESC STORAGE INTEGRATION IDENTIFIER($gcs_integration_name);
@@ -211,11 +246,11 @@ DESC STORAGE INTEGRATION IDENTIFIER($gcs_integration_name);
 
 ## Business Data Access (Optional)
 
-For business datasets stored in Snowflake, execute Steps 4 and 5 in the script, referencing the database and schema where the business data is stored. It is recommended to create a separate schema under the same StitcherAI database as the cost data.
+For business datasets stored in Snowflake, execute Steps 5 and 6 in the script, referencing the database and schema where the business data is stored. It is recommended to create a separate schema under the same StitcherAI database as the cost data. The business-data connection reuses the same StitcherAI user and role, so it uses whichever authentication mechanism (PAT or key pair) you set up in Step 3 — select the same **Authentication method** when creating the connection.
 
 ## Creating the Data Source in the StitcherAI UI
 
-Navigate to the [Data Sources](https://app.stitcher.ai/connections/datasources) page in the StitcherAI web app and create a new data source for **Snowflake cost data**. Input the credentials recorded in the steps above. Once created, validate the connection by clicking **Validate connection** in the row actions, or use the **Validate all connections** button at the top of the table.
+Navigate to the [Data Sources](https://app.stitcher.ai/connections/datasources) page in the StitcherAI web app and create a new data source for **Snowflake cost data**. Set **Authentication method** to match the option you ran in Step 3 — **Password** for a PAT (enter the PAT as the password) or **Key pair** (paste the private key, and the passphrase only if your key is encrypted) — then input the remaining credentials recorded in the steps above. Once created, validate the connection by clicking **Validate connection** in the row actions, or use the **Validate all connections** button at the top of the table.
 
 ## Need Help?
 
