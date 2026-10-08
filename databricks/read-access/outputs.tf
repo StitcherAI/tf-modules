@@ -14,42 +14,47 @@ output "stitcherai_warehouse_id" {
   description = "Target Compute Warehouse configuration string identifier for API payloads."
 }
 
+output "catalog_name" {
+  value       = local.catalog_name
+  description = "Catalog that holds the StitcherAI FOCUS billing schema and views."
+}
+
 output "view_stitcherai_focus_v1_3" {
-  value       = "${var.catalog_name}.${databricks_schema.stitcherai_billing_schema.name}.${databricks_sql_table.stitcherai_focus_view.name}"
+  value       = "${local.schema_fqn}.${databricks_sql_table.stitcherai_focus_view.name}"
   description = "The database string route where applications query the unified FOCUS v1.3 cost data."
 }
 
 output "view_pipelines_path" {
-  value       = "${var.catalog_name}.${databricks_schema.stitcherai_billing_schema.name}.${databricks_sql_table.view_lakeflow_pipelines.name}"
+  value       = "${local.schema_fqn}.${databricks_sql_table.view_lakeflow_pipelines.name}"
   description = "FQTN for raw Lakeflow pipelines metadata."
 }
 
 output "view_clusters_path" {
-  value       = "${var.catalog_name}.${databricks_schema.stitcherai_billing_schema.name}.${databricks_sql_table.view_compute_clusters.name}"
+  value       = "${local.schema_fqn}.${databricks_sql_table.view_compute_clusters.name}"
   description = "FQTN for raw compute clusters metadata."
 }
 
 output "view_warehouses_path" {
-  value       = "${var.catalog_name}.${databricks_schema.stitcherai_billing_schema.name}.${databricks_sql_table.view_compute_warehouses.name}"
+  value       = "${local.schema_fqn}.${databricks_sql_table.view_compute_warehouses.name}"
   description = "FQTN for raw SQL warehouses metadata."
 }
 
 output "view_billing_usage_path" {
-  value       = "${var.catalog_name}.${databricks_schema.stitcherai_billing_schema.name}.${databricks_sql_table.view_billing_usage.name}"
+  value       = "${local.schema_fqn}.${databricks_sql_table.view_billing_usage.name}"
   description = "FQTN for raw billing and consumption logs."
 }
 
 output "view_workspaces_latest_path" {
-  value       = "${var.catalog_name}.${databricks_schema.stitcherai_billing_schema.name}.${databricks_sql_table.view_workspaces_latest.name}"
+  value       = "${local.schema_fqn}.${databricks_sql_table.view_workspaces_latest.name}"
   description = "FQTN for raw workspace identifiers."
 }
 
 output "view_billing_list_prices_path" {
-  value       = "${var.catalog_name}.${databricks_schema.stitcherai_billing_schema.name}.${databricks_sql_table.view_billing_list_prices.name}"
+  value       = "${local.schema_fqn}.${databricks_sql_table.view_billing_list_prices.name}"
   description = "FQTN for raw default list pricing data."
 }
 
 output "view_billing_account_prices_path" {
-  value       = "${var.catalog_name}.${databricks_schema.stitcherai_billing_schema.name}.${databricks_sql_table.view_billing_account_prices.name}"
+  value       = "${local.schema_fqn}.${databricks_sql_table.view_billing_account_prices.name}"
   description = "FQTN for raw account-specific custom pricing data."
 }

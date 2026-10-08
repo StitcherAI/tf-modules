@@ -1,13 +1,38 @@
+# -----------------------------------------------------------------------------
+# Target catalog
+#
+# This module does NOT create a catalog. It creates one isolated schema
+# (stitcherai_focus_billing) inside an existing catalog named by
+# var.catalog_name, and the FOCUS views inside that schema.
+#
+# Why: the Databricks-managed `system` catalog is read-only, so the schema can
+# never live there (the views only *read from* system.* tables). And catalogs
+# on Databricks Default Storage (serverless workspaces) can only be created via
+# the UI or SQL - the Unity Catalog REST API used by Terraform rejects them -
+# so creating a catalog here would not work for every customer.
+#
+# Typical values for var.catalog_name:
+#   - "main" on classic workspaces
+#   - the workspace catalog (usually named after the workspace) on serverless
+#     workspaces
+#   - a dedicated catalog created once in Catalog Explorer (Default Storage)
+# The deployer identity needs USE CATALOG and CREATE SCHEMA on it.
+# -----------------------------------------------------------------------------
+locals {
+  catalog_name = var.catalog_name
+  schema_fqn   = "${local.catalog_name}.${databricks_schema.stitcherai_billing_schema.name}"
+}
+
 resource "databricks_schema" "stitcherai_billing_schema" {
   provider     = databricks.workspace
-  catalog_name = var.catalog_name
+  catalog_name = local.catalog_name
   name         = "stitcherai_focus_billing"
   comment      = "StitcherAI custom isolated schema mapping Databricks System tables to FOCUS v1.3 standard."
 }
 
 resource "databricks_sql_table" "view_lakeflow_pipelines" {
   provider        = databricks.workspace
-  catalog_name    = var.catalog_name
+  catalog_name    = local.catalog_name
   schema_name     = databricks_schema.stitcherai_billing_schema.name
   name            = "pipelines"
   table_type      = "VIEW"
@@ -17,7 +42,7 @@ resource "databricks_sql_table" "view_lakeflow_pipelines" {
 
 resource "databricks_sql_table" "view_compute_clusters" {
   provider        = databricks.workspace
-  catalog_name    = var.catalog_name
+  catalog_name    = local.catalog_name
   schema_name     = databricks_schema.stitcherai_billing_schema.name
   name            = "clusters"
   table_type      = "VIEW"
@@ -27,7 +52,7 @@ resource "databricks_sql_table" "view_compute_clusters" {
 
 resource "databricks_sql_table" "view_compute_warehouses" {
   provider        = databricks.workspace
-  catalog_name    = var.catalog_name
+  catalog_name    = local.catalog_name
   schema_name     = databricks_schema.stitcherai_billing_schema.name
   name            = "warehouses"
   table_type      = "VIEW"
@@ -37,7 +62,7 @@ resource "databricks_sql_table" "view_compute_warehouses" {
 
 resource "databricks_sql_table" "view_billing_usage" {
   provider        = databricks.workspace
-  catalog_name    = var.catalog_name
+  catalog_name    = local.catalog_name
   schema_name     = databricks_schema.stitcherai_billing_schema.name
   name            = "billing_usage"
   table_type      = "VIEW"
@@ -47,7 +72,7 @@ resource "databricks_sql_table" "view_billing_usage" {
 
 resource "databricks_sql_table" "view_workspaces_latest" {
   provider        = databricks.workspace
-  catalog_name    = var.catalog_name
+  catalog_name    = local.catalog_name
   schema_name     = databricks_schema.stitcherai_billing_schema.name
   name            = "workspaces_latest"
   table_type      = "VIEW"
@@ -57,7 +82,7 @@ resource "databricks_sql_table" "view_workspaces_latest" {
 
 resource "databricks_sql_table" "view_billing_list_prices" {
   provider        = databricks.workspace
-  catalog_name    = var.catalog_name
+  catalog_name    = local.catalog_name
   schema_name     = databricks_schema.stitcherai_billing_schema.name
   name            = "billing_list_prices"
   table_type      = "VIEW"
@@ -67,7 +92,7 @@ resource "databricks_sql_table" "view_billing_list_prices" {
 
 resource "databricks_sql_table" "view_billing_account_prices" {
   provider        = databricks.workspace
-  catalog_name    = var.catalog_name
+  catalog_name    = local.catalog_name
   schema_name     = databricks_schema.stitcherai_billing_schema.name
   name            = "billing_account_prices"
   table_type      = "VIEW"
@@ -77,7 +102,7 @@ resource "databricks_sql_table" "view_billing_account_prices" {
 
 resource "databricks_sql_table" "stitcherai_focus_view" {
   provider     = databricks.workspace
-  catalog_name = var.catalog_name
+  catalog_name = local.catalog_name
   schema_name  = databricks_schema.stitcherai_billing_schema.name
   name         = "stitcherai_focus_v1_3_usage_view"
   table_type   = "VIEW"
@@ -86,33 +111,33 @@ resource "databricks_sql_table" "stitcherai_focus_view" {
   view_definition = <<SQL
     WITH pipeline_names AS (
       SELECT account_id, workspace_id, pipeline_id, name AS pipeline_name
-      FROM ${var.catalog_name}.stitcherai_focus_billing.pipelines
+      FROM ${local.schema_fqn}.pipelines
       QUALIFY ROW_NUMBER() OVER (
         PARTITION BY account_id, workspace_id, pipeline_id ORDER BY create_time DESC
       ) = 1
     ),
     cluster_names AS (
       SELECT account_id, workspace_id, cluster_id, cluster_name
-      FROM ${var.catalog_name}.stitcherai_focus_billing.clusters
+      FROM ${local.schema_fqn}.clusters
       QUALIFY ROW_NUMBER() OVER (
         PARTITION BY account_id, workspace_id, cluster_id ORDER BY change_time DESC
       ) = 1
     ),
     warehouse_names AS (
       SELECT account_id, workspace_id, warehouse_id, warehouse_name
-      FROM ${var.catalog_name}.stitcherai_focus_billing.warehouses
+      FROM ${local.schema_fqn}.warehouses
       QUALIFY ROW_NUMBER() OVER (
         PARTITION BY account_id, workspace_id, warehouse_id ORDER BY change_time DESC
       ) = 1
     ),
     list_prices as (
       select coalesce(price_end_time, date_add(current_date, 1)) as coalesced_price_end_time, *
-      from ${var.catalog_name}.stitcherai_focus_billing.billing_list_prices
+      from ${local.schema_fqn}.billing_list_prices
       where currency_code = 'USD'
     ),
     account_prices as (
       select coalesce(price_end_time, date_add(current_date, 1)) as coalesced_price_end_time, *
-      from ${var.catalog_name}.stitcherai_focus_billing.billing_account_prices
+      from ${local.schema_fqn}.billing_account_prices
       where currency_code = 'USD'
     ),
     usage_with_pricing AS (
@@ -141,7 +166,7 @@ resource "databricks_sql_table" "stitcherai_focus_view" {
         CAST(lp.pricing.default AS DECIMAL(30, 15)) AS list_unit_price,
         CAST(ap.pricing.default AS DECIMAL(30, 15)) AS account_unit_price
       FROM
-        ${var.catalog_name}.stitcherai_focus_billing.billing_usage u
+        ${local.schema_fqn}.billing_usage u
           LEFT JOIN list_prices lp
             ON u.sku_name = lp.sku_name
             AND u.usage_unit = lp.usage_unit
@@ -152,7 +177,7 @@ resource "databricks_sql_table" "stitcherai_focus_view" {
             AND u.usage_unit = ap.usage_unit
             AND u.account_id = ap.account_id
             AND u.usage_end_time between ap.price_start_time and ap.coalesced_price_end_time
-          LEFT JOIN ${var.catalog_name}.stitcherai_focus_billing.workspaces_latest w
+          LEFT JOIN ${local.schema_fqn}.workspaces_latest w
             ON u.account_id = w.account_id
             AND u.workspace_id = w.workspace_id
           LEFT JOIN pipeline_names pip

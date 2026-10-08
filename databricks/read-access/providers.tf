@@ -33,8 +33,12 @@ variable "account_profile" {
 
 variable "catalog_name" {
   type        = string
-  description = "The target catalog where the StitcherAI billing schema will reside."
-  default     = "main"
+  description = "Existing Unity Catalog catalog in which this module creates the stitcherai_focus_billing schema and views (e.g. \"main\", or the workspace catalog on serverless workspaces). Must NOT be the read-only `system` catalog."
+
+  validation {
+    condition     = lower(var.catalog_name) != "system"
+    error_message = "The Databricks `system` catalog is read-only; choose a catalog you own (e.g. \"main\" or your workspace catalog)."
+  }
 }
 
 variable "account_prices_table_path" {
