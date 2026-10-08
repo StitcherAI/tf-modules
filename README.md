@@ -21,19 +21,24 @@ Your StitcherAI environment ID is required for most setups. You can find it at [
 |---|---|---|
 | AWS | [`aws/`](./aws/) | IAM role for cross-account access, S3 read/export policies, CUR describe policy |
 | Azure | [`azure/`](./azure/) | Azure AD application for federated access, Blob Store read/export bindings |
+| Databricks | [`databricks/`](./databricks/) | Service principal, SQL warehouse, and read-only views over billing, compute, and workspace system tables, including a FOCUS v1.3 view |
 | GCP | [`gcp/`](./gcp/) | BigQuery and GCS read/export IAM bindings, IAM role |
 
 ### SaaS & API Providers (Setup Guides)
 
 | Provider | Directory | Guide |
 |---|---|---|
-| Snowflake | [`snowflake/`](./snowflake/) | SQL scripts for cost read access and optional write access for StitcherAI datasets (PAT or key-pair authentication) |
+| Anthropic | [`anthropic/`](./anthropic/) | Admin API key setup for cost and usage data access |
+| Clumio | [`clumio/`](./clumio/) | API token setup for consumption data access |
 | Confluent Cloud | [`confluent_cloud/`](./confluent_cloud/) | API key setup for cost and usage data access |
 | Elastic Cloud | [`elastic_cloud/`](./elastic_cloud/) | API key setup for cost and usage data access |
+| GitHub | [`github/`](./github/) | Personal access token setup for GitHub Enterprise usage data access |
 | MongoDB Atlas | [`mongodb_atlas/`](./mongodb_atlas/) | Admin API key setup for cost and usage data access |
-| Twilio | [`twilio/`](./twilio/) | Standard API key setup for cost and usage data access |
 | OpenAI | [`openai/`](./openai/) | Read-only Admin Key setup for cost and usage data access |
-| Anthropic | [`anthropic/`](./anthropic/) | Admin API key setup for cost and usage data access |
+| RunPod | [`runpod/`](./runpod/) | API key setup for cost and usage data access |
+| Snowflake | [`snowflake/`](./snowflake/) | SQL scripts for cost read access and optional write access for StitcherAI datasets (PAT or key-pair authentication) |
+| Temporal | [`temporal/`](./temporal/) | Temporal Cloud API key setup for cost and usage data access |
+| Twilio | [`twilio/`](./twilio/) | Standard API key setup for cost and usage data access |
 
 ---
 
