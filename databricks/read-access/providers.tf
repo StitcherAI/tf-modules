@@ -7,55 +7,28 @@ terraform {
   }
 }
 
-# -----------------------------------------------------------------------------
-# Provider authentication
-#
-# Terraform authenticates as an admin identity (the deployer) using OAuth.
-# Two aliases are used, matching the other StitcherAI Databricks modules:
-#   - databricks.workspace : workspace-scoped resources (service principal,
-#     warehouse, schema, views, grants)
-#   - databricks.account   : account-scoped resources (service principal secret)
-# -----------------------------------------------------------------------------
+# Each provider reads its host, IDs, and credentials from a Databricks CLI
+# profile in ~/.databrickscfg so no secret is passed through Terraform.
 provider "databricks" {
-  alias         = "workspace"
-  host          = var.workspace_host
-  client_id     = var.client_id
-  client_secret = var.client_secret
+  alias   = "workspace"
+  profile = var.workspace_profile
 }
 
 provider "databricks" {
-  alias         = "account"
-  host          = var.account_host
-  account_id    = var.account_id
-  client_id     = var.client_id
-  client_secret = var.client_secret
+  alias   = "account"
+  profile = var.account_profile
 }
 
-variable "workspace_host" {
+variable "workspace_profile" {
   type        = string
-  description = "Databricks workspace URL (e.g., https://dbc-xxxx.cloud.databricks.com)."
+  description = "Databricks CLI profile for the target workspace, created with `databricks auth login --host <WORKSPACE-URL> --profile <NAME>`."
+  default     = "stitcherai-workspace"
 }
 
-variable "account_host" {
+variable "account_profile" {
   type        = string
-  description = "Databricks account-level host (e.g., https://accounts.cloud.databricks.com)."
-  default     = "https://accounts.cloud.databricks.com"
-}
-
-variable "account_id" {
-  type        = string
-  description = "Databricks account ID (from the Admin Console)."
-}
-
-variable "client_id" {
-  type        = string
-  description = "OAuth client ID of the admin identity Terraform authenticates as."
-}
-
-variable "client_secret" {
-  type        = string
-  description = "OAuth client secret of the admin identity Terraform authenticates as."
-  sensitive   = true
+  description = "Databricks CLI profile for the account console, created with `databricks auth login --host <ACCOUNT-CONSOLE-URL> --account-id <ACCOUNT-ID> --profile <NAME>`."
+  default     = "stitcherai-account"
 }
 
 variable "catalog_name" {

@@ -6,9 +6,9 @@ sql_warehouse_size = "Small"
 # For Account Prices Preview (AWS/GCP), update this path string to "system.billing.account_prices"
 account_prices_table_path = "system.billing.list_prices"
 
-# Provider authentication — fill these in before running terraform.
-# workspace_host = "https://dbc-xxxx.cloud.databricks.com"
-# account_host   = "https://accounts.cloud.databricks.com"
-# account_id     = ""
-# client_id      = ""
-# client_secret  = ""
+# Databricks CLI profiles Terraform authenticates with. Create them before
+# running terraform:
+#   databricks auth login --host https://dbc-xxxx.cloud.databricks.com --profile stitcherai-workspace
+#   databricks auth login --host https://accounts.cloud.databricks.com --account-id <ACCOUNT-ID> --profile stitcherai-account
+workspace_profile = "stitcherai-workspace"
+account_profile   = "stitcherai-account"
