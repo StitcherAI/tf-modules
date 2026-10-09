@@ -8,10 +8,19 @@
 # Preconditions for the deployer identity, NOT granted here:
 #   - the system schemas system.billing, system.compute, system.lakeflow and
 #     system.access must be enabled on the metastore,
-#   - the deployer must be both an account admin and a metastore admin. Only
-#     a metastore admin can grant access to the system schemas, and a
-#     metastore that Databricks created automatically has no metastore admin
-#     until an account admin assigns one in the account console, and
+#   - the deployer must be an account admin, a metastore admin, and a
+#     workspace admin of the target workspace. Only a metastore admin can
+#     grant access to the system schemas, and a metastore that Databricks
+#     created automatically has no metastore admin until an account admin
+#     assigns one in the account console. Only a workspace admin can create
+#     the service principal and the SQL warehouse. Account admin does not
+#     include workspace admin; an account admin assigns it in the account
+#     console under the workspace's permissions,
+#   - the deployer must hold USE_CATALOG and CREATE_SCHEMA on
+#     var.catalog_name. Workspace admin does not always include them: the
+#     `workspace` catalog is owned by a Databricks-managed group that a newly
+#     assigned workspace admin may not belong to, so a metastore admin may
+#     need to grant both privileges directly, and
 #   - the deployer must not be the identity configured in StitcherAI, or the
 #     extractor reads with admin rights and these grants go untested.
 # -----------------------------------------------------------------------------
