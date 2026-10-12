@@ -35,7 +35,6 @@ Your StitcherAI environment ID is required for most setups. You can find it at [
 | GitHub | [`github/`](./github/) | Personal access token setup for GitHub Enterprise usage data access |
 | MongoDB Atlas | [`mongodb_atlas/`](./mongodb_atlas/) | Admin API key setup for cost and usage data access |
 | OpenAI | [`openai/`](./openai/) | Read-only Admin Key setup for cost and usage data access |
-| RunPod | [`runpod/`](./runpod/) | API key setup for cost and usage data access |
 | Snowflake | [`snowflake/`](./snowflake/) | SQL scripts for cost read access and optional write access for StitcherAI datasets (PAT or key-pair authentication) |
 | Twilio | [`twilio/`](./twilio/) | Standard API key setup for cost and usage data access |
 
