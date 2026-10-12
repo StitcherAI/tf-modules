@@ -1,8 +1,3 @@
-variable "stitcher_environment_id" {
-  type        = string
-  description = "The StitcherAI environment id."
-}
-
 variable "stitcher_ai_sa_email" {
   type        = string
   description = "The StitcherAI service account email. (Provided by StitcherAI)"
