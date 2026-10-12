@@ -21,7 +21,7 @@ Your StitcherAI environment ID is required for most setups. You can find it at [
 |---|---|---|
 | AWS | [`aws/`](./aws/) | IAM role for cross-account access, S3 read/export policies, CUR describe policy |
 | Azure | [`azure/`](./azure/) | Azure AD application for federated access, Blob Store read/export bindings |
-| Databricks | [`databricks/`](./databricks/) | Service principal, SQL warehouse, read grants on the billing, compute, access, and Lakeflow system schemas, and read-only views over those tables, including a FOCUS v1.3 view |
+| Databricks | [`databricks/`](./databricks/) | Service principal, SQL warehouse, and read grants on the billing, compute, and Lakeflow system schemas and the `system.access.workspaces_latest` table |
 | GCP | [`gcp/`](./gcp/) | BigQuery and GCS read/export IAM bindings, IAM role |
 
 ### SaaS & API Providers (Setup Guides)
