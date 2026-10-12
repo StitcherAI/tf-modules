@@ -1,6 +1,9 @@
 resource "databricks_service_principal" "stitcherai_sp" {
   provider     = databricks.workspace
   display_name = "stitcherai-focus-billing-reader-sp"
+
+  # New principals no longer inherit entitlements from the workspace `users` group.
+  databricks_sql_access = true
 }
 
 resource "databricks_service_principal_secret" "stitcherai_sp_secret" {
